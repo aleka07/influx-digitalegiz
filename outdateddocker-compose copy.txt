@@ -1,0 +1,64 @@
+# Файл: docker-compose.yml
+# Версия с фиксированными версиями и новыми именами сервисов
+
+version: '3.8'
+
+services:
+  # Сервис базы данных InfluxDB
+  influxdb:
+    image: influxdb:2.7.6 # <-- ВЕРСИЯ ЗАФИКСИРОВАНА
+    container_name: digitalegiz-influx # <-- ИМЯ ИЗМЕНЕНО
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=Aa31415926
+      - DOCKER_INFLUXDB_INIT_ORG=dtkaznu
+      - DOCKER_INFLUXDB_INIT_BUCKET=iot-data
+    networks:
+      - digital-egiz
+
+  # Сервис визуализации Grafana
+# Сервис визуализации Grafana
+  grafana:
+    image: grafana/grafana-oss:10.4.2
+    container_name: digitalegiz-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Папка для данных Grafana (убедитесь, что права 472:472 установлены)
+      - ./data/grafana:/var/lib/grafana
+      # "Пробрасываем" папку с собранным плагином внутрь контейнера
+      - ~/ertis-research-unity-panel:/var/lib/grafana/plugins/ertis-research-unity-panel
+    environment:
+      # Разрешаем загрузку этого конкретного неподписанного плагина
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ertis-research-unity-panel
+      # Включаем режим разработки, как требует документация
+      - GF_APP_MODE=development
+    depends_on:
+      - influxdb
+    networks:
+      - digital-egiz
+
+  # Сервис сбора данных Telegraf
+  telegraf:
+    image: telegraf:1.30.1 # <-- ВЕРСИЯ ЗАФИКСИРОВАНА
+    container_name: digitalegiz-telegraf # <-- ИМЯ ИЗМЕНЕНО
+    restart: unless-stopped
+    volumes:
+      # Пробрасываем наш файл конфигурации внутрь
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - influxdb
+    networks:
+      - digital-egiz
+
+# Определяем нашу общую сеть как внешнюю
+networks:
+  digital-egiz:
+    external: true

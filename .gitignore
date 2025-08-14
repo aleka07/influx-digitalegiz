@@ -1,10 +1,25 @@
-# Data directories - contains runtime data
+# Data directories - contains runtime data and sensitive information
 data/
 
 # Docker volumes and runtime files
 *.log
 .env
+.env.local
+
+# Backup files
+*.backup
+*.bak
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*~
